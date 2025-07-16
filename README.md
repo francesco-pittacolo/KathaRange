@@ -26,7 +26,7 @@ depending on which team you want to play:
 usr/psw
 
     red/lRGXTicDZEh_TW23gFoLLrB8uqhat_EogkJD-a2foVg
-    blu/e-1yjrXMhf6lKXoKcHAl8VS7P2-aIbFymQqBvwOJ4Xc
+    blue/e-1yjrXMhf6lKXoKcHAl8VS7P2-aIbFymQqBvwOJ4Xc
 
 or if you restart the server in the container with `--insecure` (edit caldera.startup and restart the container or kill the process in the machine and restart `python3 server.py --insecure`) 
 
@@ -37,5 +37,5 @@ https://localhost
 
 usr/psw
 
-    Admin/SecretPassword
+    admin/SecretPassword
 
