@@ -11,5 +11,6 @@ echo $MANAGER_IP wazuh.manager >> /etc/hosts
 
 cp /shared/wazuh_manager/etc/decoders/* /var/ossec/etc/decoders/
 cp /shared/wazuh_manager/etc/rules/* /var/ossec/etc/rules/
+sleep 1
 ./var/ossec/active-response/bin/restart.sh manager
 
