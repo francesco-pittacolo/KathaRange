@@ -6,10 +6,10 @@ KathaRange is a cybersecurity training platform built on the [Kathará framework
 - Docker
   
 ### Getting Started
-Launch the script in the root of the project.[^1]
+Launch the script in the root of the project.
 
     ./init.sh
-the script will automatically clone all dependencies and build all images needed by the Kathará lab. You can go grab a coffee, it will take some time to complete :coffee:
+The script will automatically clone all dependencies and build all images needed by the Kathará lab. You can go grab a coffee, it will take some time to complete :coffee:
 
 Once the process is completed, navigate to the folder:
 ```
