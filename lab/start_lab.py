@@ -89,7 +89,6 @@ if __name__ == "__main__":
                 device.copy_directory_from_path("assets/agents","/agents")
             if "wazuh-agent" in content or "snort" in dev["image"]:
                 device.create_file_from_path(f"assets/wazuh-agent_4.9.0-1_amd64.deb", "/wazuh-agent_4.9.0-1_amd64.deb")
-        print(dev["image"])
         if "snort" in dev["image"]:
             device.copy_directory_from_path("assets/snort3/","/snort3/")
 
