@@ -18,6 +18,8 @@ cd lab
 Run the following commands to install Kathara python API:
 ```
 python3 -m pip install git+https://github.com/saghul/pyuv@master#egg=pyuv
+```
+```
 python3 -m pip install "kathara"
 ```
 Then you can run lab with:
