@@ -8,20 +8,17 @@ services:
   snort:
     build:
       context: snort/
-      dockerfile: Dockerfile
     image: snort:${SNORT_VERSION}
     hostname: snort
 
   tomcat:
     build:
       context: tomcat/
-      dockerfile: Dockerfile
     image: tomcat:${TOMCAT_VERSION}
 
   caldera:
     build:
-      context: ../deps/caldera/
-      dockerfile: ../../Dockerfiles/caldera/Dockerfile
+      context: caldera/
     image: caldera:${CALDERA_VERSION}
 
   vuln_apache:
