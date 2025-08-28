@@ -205,7 +205,7 @@ fi
 
 
 echo -e "${BLUE}Building images for the lab...${RESET}"
-services=( "snort" "tomcat" "caldera" "vuln_apache" "kali" "suricata" "polarproxy" "website" "database" "client")
+services=( "snort" "tomcat" "caldera" "vuln_apache" "kali")
 
 if [[ -f "$DOCKERFILES_DIR/.env" ]]; then
     set -a
