@@ -133,7 +133,7 @@ def check_ospf(router, lab, expected_routes):
     )
 
     if rc != 0:
-        print(f"[{name}] ⚠️ command failed: {stderr.decode().strip()}")
+        print(f"[{name}] ⚠️ Command failed: {stderr.decode().strip()}")
         return False
 
     ospf_routes = stdout.decode().strip()
