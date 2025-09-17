@@ -3,6 +3,8 @@ from Kathara.model.Lab import Lab
 from Kathara.setting import Setting
 import yaml
 import subprocess
+import argparse
+import signal
 import shlex
 import sys
 import os
@@ -13,10 +15,10 @@ import re
 python_path = sys.executable  
 
 # Whether to open xterm terminals for each device
-spawn_terminals = True  
+#spawn_terminals = True  
 
 # Whether to check OSPF routing tables for convergence
-check_r_ospf = True  
+#check_r_ospf = True  
 
 def connect_tty_xterm(router_name, lab_name):
     """
@@ -49,6 +51,7 @@ def load_lab(filename: str):
             "interfaces": cfg.get("interfaces", {}),
             "addresses": cfg.get("addresses", None),
             "options": cfg.get("options") or {},
+            "spawn_terminal": cfg.get("spawn_terminal", False),
         }
 
     return lab_info, parsed_devices
@@ -175,8 +178,28 @@ def prepare_startup_file(startup_file, name, dev, lab):
         else:
             print(f"No addresses and no existing startup file for {name}")
 
+# Parse command-line arguments
+def parse_args():
+    parser = argparse.ArgumentParser(description="Deploy Kathara lab with optional features.")
+    parser.add_argument(
+        "--spawn-terminals",
+        action="store_true",
+        help="Open a terminal for each device."
+    )
+    parser.add_argument(
+        "--check-ospf",
+        action="store_true",
+        help="Check OSPF routing tables for convergence."
+    )
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
+
+    args = parse_args()
+    spawn_terminals = args.spawn_terminals
+    check_r_ospf = args.check_ospf
+
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Load lab configuration
@@ -283,13 +306,30 @@ if __name__ == "__main__":
         Kathara.get_instance().deploy_lab(lab)
 
     # Open terminals
-    if spawn_terminals:
-        processes = []
-        for name in devices.keys():
+    processes = []
+    for name, dev in devices.items():
+        if spawn_terminals or dev.get("spawn_terminal", False):
             p = connect_tty_xterm(name, lab_name)
             processes.append(p)
-        for p in processes:
-            p.wait()
+
+    if processes:
+        print("\n✅ Lab deployed. Close all terminals or press Ctrl+C to stop...")
+        try:
+            while True:
+                # Controlla se tutti i terminali sono chiusi
+                still_running = any(p.poll() is None for p in processes)
+                if not still_running:
+                    break
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+    else:
+        print("\n✅ Lab deployed in background. Press Ctrl+C to stop and remove it...")
+        try:
+            signal.pause()  # Wait for signals (e.g., SIGINT)
+        except KeyboardInterrupt:
+            pass
+
 
     print("Stopping and removing lab...")
     Kathara.get_instance().undeploy_lab(lab_name=lab.name)
