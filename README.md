@@ -6,24 +6,19 @@ KathaRange is a cybersecurity training platform built on the [Kathará framework
 - Docker
   
 ### Getting Started
-Launch the script in the root of the project.
+Launch the script in the root of the project.[^1]
 
     ./init.sh
-The script will automatically clone all dependencies and build all images needed by the Kathará lab. You can go grab a coffee, it will take some time to complete :coffee:
+the script will automatically clone all dependencies and build all images needed by the Kathará lab. You can go grab a coffee, it will take some time to complete :coffee:
 
-Once the process is completed, navigate to the folder:
-```
-cd lab
-```
-Run the following commands to install Kathara python API:
+Once the process is completed, run the following commands to install Kathara python API:
 ```
 python3 -m pip install git+https://github.com/saghul/pyuv@master#egg=pyuv
-```
-```
 python3 -m pip install "kathara"
 ```
-Then you can run lab with:
+Then you can start lab with:
 ```
+cd lab
 python3 start_lab.py
 ```
 ⚠️ Wait for all terminals to completely load the startup scripts, then you will able to access all servicies.

@@ -205,7 +205,7 @@ fi
 
 
 echo -e "${BLUE}Building images for the lab...${RESET}"
-services=( "snort" "tomcat" "caldera" "vuln_apache" "kali")
+services=( "snort" "tomcat" "caldera" "vuln_apache" "kali" "metasploitable")
 
 if [[ -f "$DOCKERFILES_DIR/.env" ]]; then
     set -a
@@ -235,12 +235,4 @@ for service in "${services[@]}"; do
     fi
 done
 
-if [[ -f "$LAB_DIR/lab.conf.template" ]]; then
-    envsubst < "$LAB_DIR/lab.conf.template" > "$LAB_DIR/lab.conf"
-    envsubst < "$LAB_LIGHT_DIR/lab.conf.template" > "$LAB_LIGHT_DIR/lab.conf"
-    echo -e "${GREEN}Generated lab.conf with updated image versions.${RESET}"
-else
-    echo -e "${RED}lab.conf.template not found in $LAB_DIR. Exiting.${RESET}"
-    exit 1
-fi
 

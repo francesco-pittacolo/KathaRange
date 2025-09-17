@@ -25,3 +25,8 @@ services:
     build:
       context: vuln_apache/
     image: vuln_apache:${VULN_APACHE_VERSION}
+  
+  metasploitable:
+    build:
+      context: metasploitable/
+    image: metasploitable:${METASPLOITABLE_VERSION}
