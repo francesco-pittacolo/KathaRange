@@ -8,7 +8,6 @@ systemctl start quagga
 
 cp /snort3/snort_syslog.lua /home/snorty/snort3/etc/snort/snort.lua
 
-
 /bin/bash /snort3/startup.sh
 
 echo 'nameserver 1.1.1.1' >> /etc/resolv.conf
