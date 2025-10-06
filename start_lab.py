@@ -180,7 +180,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Deploy Kathara lab.")
 
     # Gruppo per argomenti obbligatori
-    required_group = parser.add_argument_group("required arguments")
+    required_group = parser.add_argument_group("possible arguments")
     required_group.add_argument(
         "lab_name",
         nargs="?",  # <-- rende l'argomento opzionale temporaneamente
