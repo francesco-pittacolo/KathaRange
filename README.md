@@ -9,19 +9,25 @@ KathaRange is a cybersecurity training platform built on the [Kathará framework
 Launch the script in the root of the project.[^1]
 
     ./init.sh
-the script will automatically clone all dependencies and build all images needed by the Kathará lab. You can go grab a coffee, it will take some time to complete :coffee:
+The script will automatically clone all dependencies and build all images needed by the Kathará lab. You can go grab a coffee, it will take some time to complete :coffee:
 
 Once the process is completed, run the following commands to install Kathara python API:
 ```
 python3 -m pip install git+https://github.com/saghul/pyuv@master#egg=pyuv
 python3 -m pip install "kathara"
 ```
-Then you can start lab with:
+Then you can start a lab with:
+
 ```
-cd lab
 python3 start_lab.py
 ```
-⚠️ Wait for all terminals to completely load the startup scripts, then you will able to access all servicies.
+You can also view all available options by running:
+
+```
+python3 start_lab.py --help
+```
+
+⚠️ Wait for all terminals to completely load the startup scripts, then you will able to access all services.
 
 Caldera will be listening on:
 http://localhost:8888/
