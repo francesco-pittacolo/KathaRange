@@ -34,7 +34,7 @@ chmod +x "$agent"
 
 # Start Blue agent
 echo "[*] Starting Blue agent..."
-nohup ./"$agent" -server "$server" -group blue &> blu.out &
+nohup ./"$agent" -server "$server" -group blue &> blue.out &
 echo "[+] Blue agent started (output -> blu.out)"
 
 # Start Red agent
