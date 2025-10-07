@@ -10,6 +10,9 @@ devices:
   r1:
     image: kathara/quagga
     type: router
+    # You can copy files and folders in machine with key assets
+    #assets:
+     # - README.md
     interfaces:
       eth0: A1
       eth1: A

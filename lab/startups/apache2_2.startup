@@ -6,5 +6,5 @@ echo 'nameserver 1.1.1.1' >> /etc/resolv.conf
 
 WAZUH_MANAGER='192.168.2.23' WAZUH_AGENT_NAME=$HOSTNAME dpkg -i /wazuh-agent_4.9.0-1_amd64.deb
 
-chmod +x /apache2_2/start.sh
-/bin/bash /apache2_2/start.sh
+chmod +x /start.sh
+/bin/bash /start.sh

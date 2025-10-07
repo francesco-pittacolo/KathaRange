@@ -46,6 +46,7 @@ def load_lab(filename: str):
         parsed_devices[name] = {
             "image": cfg.get("image", None),
             "type": cfg.get("type", None),
+            "assets": cfg.get("assets", None),
             "interfaces": cfg.get("interfaces", {}),
             "addresses": cfg.get("addresses", None),
             "options": cfg.get("options") or {},
@@ -177,14 +178,14 @@ def prepare_startup_file(startup_file, name, dev, lab):
             print(f"No addresses and no existing startup file for {name}")
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Deploy Kathara lab.")
+    parser = argparse.ArgumentParser(description="Deploy Kathara lab.", formatter_class=argparse.RawTextHelpFormatter)
 
     # Gruppo per argomenti obbligatori
-    required_group = parser.add_argument_group("possible arguments")
+    required_group = parser.add_argument_group("required arguments")
     required_group.add_argument(
         "lab_name",
         nargs="?",  # <-- rende l'argomento opzionale temporaneamente
-        help="Name of the lab folder to use (e.g. 'lab', 'lab2', 'bob')"
+        help="Lab folder to use (e.g. 'lab', 'lab2', 'bob')\nAsked if not provided."
     )
 
     # Gruppo per flag opzionali
@@ -541,14 +542,33 @@ if __name__ == "__main__":
             device = lab_devices[name]
 
             # Copy device-specific assets if available
-            machine_folder_name = os.path.join(lab_folder, "assets", name)
-            if os.path.isdir(machine_folder_name):
-                device.copy_directory_from_path(machine_folder_name, f"/{name}/")
-
-            # Copy router-specific assets if available
-            router_folder_name = os.path.join(lab_folder, "assets", "routers", name)
-            if os.path.isdir(router_folder_name):
-                device.copy_directory_from_path(router_folder_name, "/")
+            if dev["assets"] == None:
+                machine_folder_name = os.path.join(lab_folder, "assets", name)
+                if os.path.isdir(machine_folder_name):
+                    device.copy_directory_from_path(machine_folder_name, f"/")
+        
+                # Copy router-specific assets if available
+                router_folder_name = os.path.join(lab_folder, "assets", "routers", name)
+                if os.path.isdir(router_folder_name):
+                    device.copy_directory_from_path(router_folder_name, f"/")
+            else:
+                # If custom assets are defined as a list in the YAML
+                try:
+                    for asset_path in dev["assets"]:
+                        abs_asset_path = os.path.abspath(asset_path)
+                        if os.path.exists(abs_asset_path):
+                            if os.path.isdir(abs_asset_path):
+                                # Copy entire directory
+                                dest_path = "/"
+                                device.copy_directory_from_path(abs_asset_path, dest_path)
+                            else:
+                                # Copy single file (e.g., README.md)
+                                dest_path = f"/{asset_path}"
+                                device.create_file_from_path(abs_asset_path, dest_path)
+                        else:
+                            print(f"Asset not found: {abs_asset_path}")
+                except Exception as e:
+                    print(f"Failed to copy custom assets for {name}: {e}")
 
             # Handle startup files
             startup_file = os.path.join(lab_folder, "startups", f"{name}.startup")
