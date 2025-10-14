@@ -1,9 +1,10 @@
 from Kathara.manager.Kathara import Kathara
 from Kathara.model.Lab import Lab
 from Kathara.setting import Setting
-import threading
 import subprocess
+import threading
 import argparse
+import readline
 import signal
 import shlex
 import time
@@ -11,6 +12,7 @@ import yaml
 import sys
 import os
 import re
+
 
 # Use the same Python interpreter as the one running this script
 python_path = sys.executable  
@@ -54,6 +56,36 @@ def load_lab(filename: str):
         }
 
     return lab_info, parsed_devices
+
+def parse_actions(filename: str):
+    """
+    Parse the YAML actions file and return them as a dictionary.
+    - If an action has 'operator', save it as a tuple (operator, cmd1, cmd2, ...).
+    - Otherwise, save the value as a simple string.
+    """
+    with open(filename, "r") as f:
+        data = yaml.safe_load(f)
+
+    actions = data.get("actions", {})
+    parsed_actions = {}
+
+    for name, machine_actions in actions.items():
+        parsed_actions[name] = []
+
+        for key, value in machine_actions.items():
+            # Compound action with operator
+            if isinstance(value, dict) and "operator" in value:
+                operation = value["operator"]
+                sub_actions = [v for k, v in sorted(value.items()) if k != "operator"]
+                parsed_actions[name].append((operation, *sub_actions))
+            # Simple command (string)
+            elif isinstance(value, str):
+                parsed_actions[name].append(value)
+            else:
+                parsed_actions[name].append(str(value))
+
+    return parsed_actions
+
 
 
 def parse_ospfd_conf(conf_file):
@@ -242,6 +274,49 @@ def monitor_processes(processes, stop_event):
 
 import traceback
 import functools
+import atexit
+
+
+def completer(text, state):
+    """
+    Auto-complete commands and machine names.
+    """
+    options = []
+
+    # Complete command names if it's the first word
+    if not readline.get_line_buffer().strip() or len(readline.get_line_buffer().split()) == 1:
+        options = [cmd for cmd in commands.keys() if cmd.startswith(text)]
+    else:
+        # Complete machine names for commands that take machines
+        options = [m for m in lab.machines.keys() if m.startswith(text)]
+
+    if state < len(options):
+        return options[state]
+    return None
+
+
+def setup_command_history(lab_name: str):
+    """
+    Initialize readline history and tab completion for the lab.
+    Returns the history file path so it can be deleted later.
+    """
+    history_file = os.path.expanduser(f"~/.kathara_{lab_name}_history")
+
+    # Load previous history if it exists
+    try:
+        readline.read_history_file(history_file)
+    except FileNotFoundError:
+        pass
+
+    # Save history at exit
+    atexit.register(readline.write_history_file, history_file)
+
+    # Set tab completion
+    readline.set_completer(completer)
+    readline.parse_and_bind("tab: complete")
+
+    return history_file
+
 
 def handle_errors(func):
     @functools.wraps(func)
@@ -274,6 +349,11 @@ def cmd_exit(args = None):
         raise
     except Exception as e:
         print(f"Failed to undeploy lab: {e}")
+    try:
+        if os.path.isfile(HISTORY_FILE):
+            os.remove(HISTORY_FILE)
+    except:
+        pass
 
 @handle_errors
 def cmd_help(args=None):
@@ -319,15 +399,7 @@ def cmd_status(args):
     
     #Case -a
     if len(args) == 1 and args[0] == "-a":
-        print("\nLab status:")
-        for name, machine in lab.machines.items():
-            try:
-                get_stats(name)
-            except KeyboardInterrupt:
-                raise
-            except Exception:
-                print(f"{name}: Status not found")
-        return
+        args = list(lab.machines.keys())
     
     #Specific machines case
     for i in args:
@@ -393,6 +465,9 @@ def cmd_undeploy(args):
         print("You must specify at least one machine name.")
         return
 
+    if len(args) == 1 and args[0] == "-a":
+        args = list(lab.machines.keys())
+    
     undeployed = []
     for name in args:
         try:
@@ -429,6 +504,9 @@ def cmd_deploy(args):
     if not args:
         print("You must specify at least one machine name.")
         return
+    
+    if len(args) == 1 and args[0] == "-a":
+        args = list(lab.machines.keys())
 
     deployed = []
     for name in args:
@@ -474,6 +552,87 @@ def cmd_restart(args):
     cmd_undeploy(args)
     cmd_deploy(args)
 
+
+def exec_command(machine_name, command):
+    try:
+        stdout, stderr, code = Kathara.get_instance().exec(
+                                    machine_name=machine_name,
+                                    command=command,
+                                    lab=lab,
+                                    stream=False
+                            )
+        return stdout, stderr, code
+    except Exception as e:
+        print(f"Exception while executing action on {machine_name}: {e}\n")
+        return None , str(e), 1  
+
+@handle_errors
+def cmd_action(args):
+    """
+    Execute actions for machines defined in the file actions.yaml
+    Usage: action <machine1> <machine2> ...
+    Example: action kali
+    """
+    if not args:
+        print("You must specify at least one machine name.")
+        return
+    
+    if len(args) == 1 and args[0] == "-a":
+        args = list(actions.keys())
+
+    for name in args:
+        actions_todo = actions[name]
+        print(f"\n=== Actions to do on {name} ===\n")
+        for i, cmd in enumerate(actions_todo, 1):
+            print(f"{i}) {cmd}")
+        
+        print("\n=== Executing actions ===\n")
+        for i, action in enumerate(actions_todo, 1):
+
+            if isinstance(action, tuple):
+                operator = action[0].upper()
+                sub_actions = action[1:]
+                print(f"Running action {i}/{len(actions_todo)} ({operator}): {len(sub_actions)} sub-actions\n")
+                success = (operator == "AND")
+                for sub_label, sub_cmd in enumerate(sub_actions, 1):
+
+                    label = f"{i}{chr(96 + sub_label)}"   # e.g. 1a, 1b, 2a, etc.
+                    print(f"Executing sub-action {label}: {sub_cmd}")
+
+                    stdout, stderr, code = exec_command(name, sub_cmd)
+                        
+                
+                    if code == 0:
+                        print(stdout.decode())
+                        if operator == 'OR':
+                            print(f"Action {label} executed successfully on {name}\n")
+                            success = True
+                            break
+                    else:
+                        print(f"Error in machine {name} for action {actions_todo.index(action)+1}: {action} -> {stderr}\n")
+                        if operator == 'AND':
+                            success = False
+                            break
+
+                # result of operators OR/AND  
+                if not success:
+                    print(f"Action group {i} ({operator}) failed on {name}\n")
+                    break
+                else:
+                    print(f"Action group {i} ({operator}) completed successfully on {name}\n")
+
+            else:   
+                print(f"Running action {i}/{len(actions_todo)}: {action}\n")
+                stdout, stderr, code = exec_command(name, action)
+                                
+                if code != 0:
+                    print(f"Error in machine {name} for action {actions_todo.index(action)+1}: {action} -> {stderr}\n")
+                    break
+                else:
+                    print(stdout.decode())
+            
+
+
 commands = {
     "exit": cmd_exit,
     "help": cmd_help,
@@ -482,6 +641,7 @@ commands = {
     "deploy": cmd_deploy,
     "undeploy": cmd_undeploy,
     "restart": cmd_restart,
+    "action": cmd_action
 }
 
 # ----------------------------------------------
@@ -495,6 +655,8 @@ if __name__ == "__main__":
         lab_name_arg = args.lab_name
         spawn_terminals = args.spawn_terminals
         check_r_ospf = args.check_ospf
+        
+        HISTORY_FILE = setup_command_history(lab_name_arg)
 
         lab_folder = os.path.join(script_dir, lab_name_arg)
         #print(lab_folder)
@@ -503,7 +665,7 @@ if __name__ == "__main__":
         lab_info, devices = load_lab(os.path.join(lab_folder, "lab_conf.yaml"))
         lab_name = lab_info.get("description")
 
-        
+        actions = parse_actions(os.path.join(lab_folder,"actions.yaml"))
         # Generate dynamic expected_routes
         expected_routes = generate_expected_routes(devices, lab_folder)
         #print("Dynamic expected_routes:", expected_routes) # for debug
@@ -518,10 +680,12 @@ if __name__ == "__main__":
 
         # Create devices from configuration
         for name, dev in devices.items():
-            print(f"\nCreating device '{name}'")
-            print(f"  Image: {dev['image']}")
-            print(f"  Interfaces: {dev['interfaces'] if dev['interfaces'] else 'None'}")
-            print(f"  Options: {dev['options'] if dev['options'] else 'None'}\n")
+
+            #---- TO UNCOMMENT ----
+           # print(f"\nCreating device '{name}'")
+           # print(f"  Image: {dev['image']}")
+           # print(f"  Interfaces: {dev['interfaces'] if dev['interfaces'] else 'None'}")
+           # print(f"  Options: {dev['options'] if dev['options'] else 'None'}\n")
 
             lab_devices[name] = lab.new_machine(
                 name,
