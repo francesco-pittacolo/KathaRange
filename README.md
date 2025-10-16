@@ -10,7 +10,7 @@ KathaRange is a cybersecurity training platform built on the [Kathará Framework
 Launch the script in the root of the project:
 
     ./init.sh
-The script will automatically clone all dependencies and build all images needed by the Kathará lab. You can go grab a coffee, it will take some time to complete :coffee:
+The script will automatically clone all dependencies and build all images needed by the  lab. You can go grab a coffee, it will take some time to complete :coffee:
 
 Once the process is completed, run the following commands to install Kathara python API:
 ```
