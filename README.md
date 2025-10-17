@@ -1,12 +1,14 @@
-# What is it?
+# KathaRange
+
+## What is it?
 **KathaRange** is a cybersecurity network emulation system built on the [Kathará Framework API](https://github.com/KatharaFramework). It can create a dynamic, containerized network of machines for cyber attack and defense scenarios, featuring leading open-source technologies such as Snort3 IDS, Wazuh SIEM, MITRE's Caldera, and a Kali Linux machine equipped with Atomic Red Team tools.
 
-### Requirements:
+## Requirements:
 - Linux host machine
 - Docker
 - Python
 
-### Getting Started
+## Getting Started
 Launch the script in the root of the project:
 
     ./init.sh
