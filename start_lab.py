@@ -5,6 +5,8 @@ import subprocess
 import threading
 import argparse
 import readline
+import random
+import string
 import signal
 import shlex
 import time
@@ -57,11 +59,12 @@ def load_lab(filename: str):
 
     return lab_info, parsed_devices
 
+
 def parse_actions(filename: str):
     """
     Parse the YAML actions file and return them as a dictionary.
-    - If an action has 'operator', save it as a tuple (operator, cmd1, cmd2, ...).
-    - Otherwise, save the value as a simple string.
+    - Named actions are preserved.
+    - Numeric-only commands are wrapped in a random-name action.
     """
     with open(filename, "r") as f:
         data = yaml.safe_load(f)
@@ -69,22 +72,36 @@ def parse_actions(filename: str):
     actions = data.get("actions", {})
     parsed_actions = {}
 
-    for name, machine_actions in actions.items():
-        parsed_actions[name] = []
+    for machine, machine_data in actions.items():
+        parsed_actions[machine] = {}
 
-        for key, value in machine_actions.items():
-            # Compound action with operator
-            if isinstance(value, dict) and "operator" in value:
-                operation = value["operator"]
-                sub_actions = [v for k, v in sorted(value.items()) if k != "operator"]
-                parsed_actions[name].append((operation, *sub_actions))
-            # Simple command (string)
-            elif isinstance(value, str):
-                parsed_actions[name].append(value)
-            else:
-                parsed_actions[name].append(str(value))
+        # Check if all keys are numeric → no named actions
+        if all(isinstance(v, (str, dict)) for v in machine_data.values()) and all(
+            str(k).isdigit() or (isinstance(v, dict) and "operator" in v)
+            for k, v in machine_data.items()
+        ):
+            # Generate random action name inline (4 chars)
+            random_action_name = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+            machine_data = {random_action_name: machine_data}
+
+        # Parse all actions (named or generated)
+        for action_name, action_data in machine_data.items():
+            parsed_actions[machine][action_name] = []
+
+            for key, value in action_data.items():
+                # Compound action (OR / AND)
+                if isinstance(value, dict) and "operator" in value:
+                    operation = value["operator"]
+                    sub_actions = [v for k, v in sorted(value.items()) if k != "operator"]
+                    parsed_actions[machine][action_name].append((operation, *sub_actions))
+                # Simple command
+                elif isinstance(value, str):
+                    parsed_actions[machine][action_name].append(value)
+                else:
+                    parsed_actions[machine][action_name].append(str(value))
 
     return parsed_actions
+
 
 
 
@@ -569,68 +586,115 @@ def exec_command(machine_name, command):
 @handle_errors
 def cmd_action(args):
     """
-    Execute actions for machines defined in the file actions.yaml
-    Usage: action <machine1> <machine2> ...
-    Example: action kali
+    Execute actions for machines defined in the file actions.yaml.
+    Usage: action <machine1> <action1> <action2> <machine2> <action1>
+    Examples:
+      action kali test          -> runs 'test' on kali
+      action kali -a            -> runs all actions on kali
+      action r1                 -> runs all commands of r1 (if single action declared)
+      action kali test r1       -> runs 'test' and all commands of r1
+      action kali -a r2 testr2  -> runs all actions of kali and 'testr2' on r2
+      action -a                 -> runs all actions on all machines
     """
     if not args:
         print("You must specify at least one machine name.")
         return
-    
+
+    # Global flag: execute all actions of all machines
     if len(args) == 1 and args[0] == "-a":
-        args = list(actions.keys())
+        targets = {m: list(actions[m].keys()) for m in actions}
+    else:
+        targets = {}
+        current_machine = None
 
-    for name in args:
-        actions_todo = actions[name]
-        print(f"\n=== Actions to do on {name} ===\n")
-        for i, cmd in enumerate(actions_todo, 1):
-            print(f"{i}) {cmd}")
-        
-        print("\n=== Executing actions ===\n")
-        for i, action in enumerate(actions_todo, 1):
+        for token in args:
+            if token in actions:
+                # Found a new machine
+                current_machine = token
+                targets[current_machine] = []
+            elif token == "-a" and current_machine:
+                # Run all actions of current machine
+                targets[current_machine] = list(actions[current_machine].keys())
+            elif current_machine:
+                # Action name for current machine
+                targets[current_machine].append(token)
+            else:
+                print(f"Ignoring '{token}': action not found in machine {machine}.")
 
-            if isinstance(action, tuple):
-                operator = action[0].upper()
-                sub_actions = action[1:]
-                print(f"Running action {i}/{len(actions_todo)} ({operator}): {len(sub_actions)} sub-actions\n")
-                success = (operator == "AND")
-                for sub_label, sub_cmd in enumerate(sub_actions, 1):
+    # Handle default actions for machines without specified actions
+    for machine, acts in list(targets.items()):
+        if not acts:
+            machine_actions = actions[machine]
+            action_names = list(machine_actions.keys())
 
-                    label = f"{i}{chr(96 + sub_label)}"   # e.g. 1a, 1b, 2a, etc.
-                    print(f"Executing sub-action {label}: {sub_cmd}")
+            # If only one action, execute it
+            if len(action_names) == 1:
+                targets[machine] = action_names
+            else:
+                # Multiple named actions
+                print(f"Multiple possible actions found for machine '{machine}': {', '.join(action_names)}. Specify one or use -a to execute all.")
+                targets[machine] = []
 
-                    stdout, stderr, code = exec_command(name, sub_cmd)
-                        
-                
-                    if code == 0:
-                        print(stdout.decode())
-                        if operator == 'OR':
-                            print(f"Action {label} executed successfully on {name}\n")
-                            success = True
-                            break
+    # Execute actions per machine
+    for machine, action_list in targets.items():
+        if not action_list:
+            continue  # skip machines with no actions to run
+
+        machine_actions = actions[machine]
+
+        for action_name in action_list:
+            if action_name not in machine_actions:
+                print(f"Action '{action_name}' not found for machine '{machine}'. Skipping.")
+                continue
+
+            steps = machine_actions[action_name] if isinstance(machine_actions[action_name], list) else machine_actions[action_name]
+            print(f"\n=== Actions to do on {machine} [{action_name}] ===\n")
+            for i, cmd in enumerate(steps, 1):
+                print(f"{i}) {cmd}")
+
+            print(f"\n=== Executing actions for {machine} [{action_name}] ===\n")
+            for i, action in enumerate(steps, 1):
+                if isinstance(action, tuple):
+                    operator = action[0].upper()
+                    sub_actions = action[1:]
+                    print(f"Running action {i}/{len(steps)} ({operator}): {len(sub_actions)} sub-actions\n")
+                    success = (operator == "AND")
+
+                    for sub_label, sub_cmd in enumerate(sub_actions, 1):
+                        try:
+                            label = f"{i}{chr(96 + sub_label)}"
+                            print(f"Executing sub-action {label}: {sub_cmd}")
+                            stdout, stderr, code = exec_command(machine, sub_cmd)
+
+                            if code == 0:
+                                print(stdout.decode())
+                                if operator == 'OR':
+                                    success = True
+                                    break
+                            else:
+                                print(f"Error in machine {machine} for sub-action {label}: {stderr}")
+                                if operator == 'AND':
+                                    success = False
+                                    break
+                        except Exception as e:
+                             print(f"Fatal error in machine {machine} for sub-action {label}: {e}")
+                    if not success:
+                        print(f"Action group {i} ({operator}) failed on {machine}\n")
+                        break
                     else:
-                        print(f"Error in machine {name} for action {actions_todo.index(action)+1}: {action} -> {stderr}\n")
-                        if operator == 'AND':
-                            success = False
+                        print(f"Action group {i} ({operator}) completed successfully on {machine}\n")
+
+                else:
+                    try:
+                        print(f"Running action {i}/{len(steps)}: {action}\n")
+                        stdout, stderr, code = exec_command(machine, action)
+                        if code != 0:
+                            print(f"Error in machine {machine} for action {i}: {stderr}\n")
                             break
-
-                # result of operators OR/AND  
-                if not success:
-                    print(f"Action group {i} ({operator}) failed on {name}\n")
-                    break
-                else:
-                    print(f"Action group {i} ({operator}) completed successfully on {name}\n")
-
-            else:   
-                print(f"Running action {i}/{len(actions_todo)}: {action}\n")
-                stdout, stderr, code = exec_command(name, action)
-                                
-                if code != 0:
-                    print(f"Error in machine {name} for action {actions_todo.index(action)+1}: {action} -> {stderr}\n")
-                    break
-                else:
-                    print(stdout.decode())
-            
+                        else:
+                            print(stdout.decode())
+                    except Exception as e:
+                        print(f"Fatal error in machine {machine} for action {i}: {e}\n")
 
 
 commands = {
@@ -681,11 +745,10 @@ if __name__ == "__main__":
         # Create devices from configuration
         for name, dev in devices.items():
 
-            #---- TO UNCOMMENT ----
-           # print(f"\nCreating device '{name}'")
-           # print(f"  Image: {dev['image']}")
-           # print(f"  Interfaces: {dev['interfaces'] if dev['interfaces'] else 'None'}")
-           # print(f"  Options: {dev['options'] if dev['options'] else 'None'}\n")
+            #print(f"\nCreating device '{name}'")
+            #print(f"  Image: {dev['image']}")
+            #print(f"  Interfaces: {dev['interfaces'] if dev['interfaces'] else 'None'}")
+            #print(f"  Options: {dev['options'] if dev['options'] else 'None'}\n")
 
             lab_devices[name] = lab.new_machine(
                 name,
