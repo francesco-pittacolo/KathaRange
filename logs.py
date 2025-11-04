@@ -17,11 +17,11 @@ def save_action_log_yaml(lab_path: str, machine: str, action_name: str, commands
     Automatically creates directories:
         <lab_path>/logs/<machine>/
 
-    Ownership is set to the original user if run with sudo, but only for newly created
+    Ownership is set to the original user if the lab is run with sudo, but only for newly created
     folders/files.
     """
     try:
-        # UID/GID of original user
+        # UID/GID of user
         uid = int(os.environ.get("SUDO_UID", os.getuid()))
         gid = int(os.environ.get("SUDO_GID", os.getgid()))
 
