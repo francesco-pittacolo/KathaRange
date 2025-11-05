@@ -4,7 +4,7 @@ from datetime import datetime
 
 LOG_DIR = "logs"
 
-def save_action_log_yaml(lab_path: str, machine: str, action_name: str, commands: dict):
+def save_action_log_yaml(lab_path: str, machine: str, action_result: str, action_name: str, total_time: str,commands: dict):
     """
     Save all executed commands of a single action into one YAML log file.
 
@@ -52,6 +52,8 @@ def save_action_log_yaml(lab_path: str, machine: str, action_name: str, commands
         data = {
             "action_name": action_name,
             "timestamp": timestamp,
+            "total_time": total_time,
+            "result":action_result,
             "commands": commands
         }
 

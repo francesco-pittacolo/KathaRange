@@ -663,7 +663,7 @@ def cmd_action(args):
             continue  # skip machines with no actions to run
 
         machine_actions = actions[machine]
-
+        action_result = True
         for action_name in action_list:
             if action_name not in machine_actions:
                 print(f"Action '{action_name}' not found for machine '{machine}'. Skipping.")
@@ -672,7 +672,7 @@ def cmd_action(args):
             commands_log = {}  # Will collect all executed commands for this action
             commands = machine_actions[action_name]
             print(f"\n=== Actions to do on {machine} [{action_name}] ===\n")
-
+            start = time.time()
             for i, command in enumerate(commands, 1):
                 if isinstance(command, tuple) and isinstance(command[0], str) and command[0].upper() in ("AND", "OR"):
                     parent_label = i
@@ -718,6 +718,7 @@ def cmd_action(args):
 
                     if not success:
                         print(f"Command group {i} ({operator}) failed on {machine}\n")
+                        action_result = False
                         break
                     else:
                         print(f"Command group {i} ({operator}) completed successfully on {machine}\n")
@@ -741,19 +742,29 @@ def cmd_action(args):
 
                         if code != 0:
                             print(f"Error in machine {machine} for command {i}: {stderr}\n")
+                            action_result = False
                             break
                         if expected is not None and expected not in output:
                             print(f"Expected output not found for command {i}: {expected}\n")
+                            action_result = False
                             break
                         #print(output)
 
                     except Exception as e:
                         print(f"Fatal error in machine {machine} for command {i}: {e}\n")
+            if action_result:
+               result = "Success"
+            else:
+                result = "Fail" 
+            end = time.time()
+            action_time = end - start
             #print(commands_log)
-            # Save the entire action log at the end
+            # Save the action log
             logs.save_action_log_yaml(
                 lab_path=lab_folder,
                 machine=machine,
+                action_result = result,
+                total_time= round(action_time,2),
                 action_name=action_name,
                 commands=commands_log
             )
