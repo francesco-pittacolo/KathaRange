@@ -1,6 +1,7 @@
 from Kathara.manager.Kathara import Kathara
-from Kathara.model.Lab import Lab
+from src.action_logger import ActionLogger 
 from Kathara.setting import Setting
+from Kathara.model.Lab import Lab
 import subprocess
 import threading
 import argparse
@@ -10,7 +11,6 @@ import string
 import signal
 import shlex
 import time
-import logs
 import yaml
 import sys
 import os
@@ -63,68 +63,66 @@ def load_lab(filename: str):
 
 def parse_actions(filename: str):
     """
-    Parse the YAML actions file and return them as a dictionary.
-    Supports:
-    - Named actions
-    - Numeric-only commands (wrap in random-name action)
+    Parse YAML actions file.
     - Each action can be:
-        - simple command as str
-        - tuple/list [command, expected]
+        - str (simple command)
+        - list/tuple [command, expected]
         - dict {command, expected}
-    - Compound actions with operator (AND/OR)
+    - Supports compound actions with operator (AND/OR)
+    - Emits a warning for incorrectly defined actions (e.g., missing action name)
     """
-    import random, string, yaml
 
     with open(filename, "r") as f:
-        data = yaml.safe_load(f)
+        data = yaml.safe_load(f) or {}
 
     actions = data.get("actions", {})
     parsed_actions = {}
 
     def normalize_action(action):
-        """Return (command, expected) tuple for any action."""
+
         if isinstance(action, str):
             return (action, None)
         elif isinstance(action, (list, tuple)):
             if len(action) != 2:
-                raise ValueError(f"Action tuple/list must have 2 elements: {action}")
-            return tuple(action)
+                raise ValueError(f"List/tuple must have exactly 2 elements: {action}")
+
+
+            return (action[0], action[1])
         elif isinstance(action, dict):
+            if "call" in action:
+                return ("call", action["call"], action.get("expected", "Success"))
             if "command" not in action:
-                raise ValueError(f"Action dict missing 'command': {action}")
+                raise ValueError(f"Dict action missing 'command': {action}")
+
             return (action["command"], action.get("expected"))
         else:
             raise ValueError(f"Unsupported action format: {action}")
 
-    for machine, machine_data in actions.items():
-        parsed_actions[machine] = {}
+    for action_name, action_content in actions.items():
+        parsed_actions[action_name] = []
 
-        # Check if all keys are numeric → no named actions
-        if all(isinstance(v, (str, dict, list)) for v in machine_data.values()) and all(
-            str(k).isdigit() or (isinstance(v, dict) and "operator" in v)
-            for k, v in machine_data.items()
-        ):
-            random_action_name = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
-            machine_data = {random_action_name: machine_data}
+        # Print warning if numeric action found without a name
+        if isinstance(action_name, int) or (isinstance(action_name, str) and action_name.isdigit()):
+            print(f"[WARNING] Possible wrongly defined action in actions.yaml: action name {action_name} : {action_content}")
 
-        # Parse all actions
-        for action_name, action_data in machine_data.items():
-            parsed_actions[machine][action_name] = []
-
-            for key, action_value in action_data.items():
-                # Compound action (OR / AND)
-                if isinstance(action_value, dict) and "operator" in action_value:
-                    operator = action_value["operator"]
+        if isinstance(action_content, list) or (isinstance(action_content, dict) and 1 not in action_content):
+            action_content = {1: action_content}
+            
+        if isinstance(action_content, dict):
+            
+            for key, value in action_content.items():
+                if isinstance(value, dict) and "operator" in value:
+                    operator = value["operator"]
                     if operator not in ("AND", "OR"):
                         raise ValueError(f"Unsupported operator: {operator}")
-                    sub_actions = [normalize_action(v) for k, v in sorted(action_value.items()) if k != "operator"]
-                    parsed_actions[machine][action_name].append((operator, *sub_actions))
+                    sub_actions = [normalize_action(v) for k, v in sorted(value.items()) if k != "operator"]
+                    parsed_actions[action_name].append((operator, *sub_actions))
                 else:
-                    parsed_actions[machine][action_name].append(normalize_action(action_value))
+                    parsed_actions[action_name].append(normalize_action(value))
+        else:
+            raise ValueError(f"Unsupported action block format for '{action_name}': {action_content}")
 
     return parsed_actions
-
-
 
 
 def parse_ospfd_conf(conf_file):
@@ -273,31 +271,42 @@ def parse_args():
     )
     args = parser.parse_args()
 
-    # Se non viene fornito lab_name, chiedilo all'utente
+    # If lab_name is not provided, ask the user
     if not args.lab_name:
         while True:
             try:
-                lab_input = input("Enter lab name: ").strip()
-                # Controlla che il nome contenga solo lettere, numeri, underscore o dash
-                if not re.fullmatch(r"[A-Za-z0-9_-]+", lab_input):
+                lab_input = input("Enter lab name or path: ").strip()
+
+                lab_base = os.path.basename(lab_input)
+                if not re.fullmatch(r"[A-Za-z0-9_-]+", lab_base):
                     print("Invalid lab name! Only letters, numbers, underscores, and dashes are allowed.")
                     continue
 
-                # Controlla che la cartella del lab esista
-                lab_folder = os.path.join(script_dir, lab_input)
+                # Determine the lab folder (full path)
+                if os.path.isabs(lab_input):
+                    lab_folder = lab_input
+                elif os.path.exists(lab_input):
+                    lab_folder = os.path.abspath(lab_input)
+                else:
+                    # Treat as lab name: look in ./labs/
+                    lab_folder = os.path.join(script_dir, "labs", lab_input)
+
+                # Check if lab_conf.yaml exists
                 lab_conf_file = os.path.join(lab_folder, "lab_conf.yaml")
                 if not os.path.isfile(lab_conf_file):
-                    print(f"Lab '{lab_input}' not found. Please try again. (Ctrl + C to exit)")
+                    print(f"Lab '{lab_input}' not found at {lab_folder}. Please try again. (Ctrl + C to exit)")
                     continue
 
-                # Nome valido e lab esistente
-                args.lab_name = lab_input
+                # Store full path in lab_folder
+                args.lab_name = lab_folder
                 break
-            
+
             except KeyboardInterrupt:
                 print("\nOperation cancelled by user.")
                 sys.exit(1)
+
     return args
+
 
 
 def monitor_processes(processes, stop_event):
@@ -333,13 +342,23 @@ def completer(text, state):
         return options[state]
     return None
 
+def sanitize_filename(file_name: str) -> str:
+    # Extract only the basename (the last part of the path)
+    file_base = os.path.basename(file_name)
+    # Remove any character that is not alphanumeric, underscore, or dash
+    file_clean = re.sub(r'[^A-Za-z0-9_-]', '', file_base)
+    return file_clean
 
 def setup_command_history(lab_name: str):
     """
     Initialize readline history and tab completion for the lab.
     Returns the history file path so it can be deleted later.
     """
-    history_file = os.path.expanduser(f"~/.kathara_{lab_name}_history")
+    safe_lab_name = sanitize_filename(lab_name)
+    
+    home_dir = os.path.expanduser("~")
+
+    history_file = os.path.join(home_dir, f"kathara_{safe_lab_name}_history")
 
     # Load previous history if it exists
     try:
@@ -596,7 +615,7 @@ def exec_command(machine_name, command):
     try:
         stdout, stderr, code = Kathara.get_instance().exec(
                                     machine_name=machine_name,
-                                    command=command,
+                                    command=["sh", "-c", command],
                                     lab=lab,
                                     stream=False
                             )
@@ -613,161 +632,220 @@ def cmd_action(args):
     Examples:
       action kali test          -> runs 'test' on kali
       action kali -a            -> runs all actions on kali
-      action r1                 -> runs all commands of r1 (if single action declared)
-      action kali test r1       -> runs 'test' and all commands of r1
+      action kali test r1 -a    -> runs 'test' and all commands of r1
       action kali -a r2 testr2  -> runs all actions of kali and 'testr2' on r2
-      action -a                 -> runs all actions on all machines
     """
     if not args:
         print("You must specify at least one machine name.")
         return
 
-    # Global flag: execute all actions of all machines
-    if len(args) == 1 and args[0] == "-a":
-        targets = {m: list(actions[m].keys()) for m in actions}
-    else:
-        targets = {}
-        current_machine = None
+    if args[0] not in lab_devices:
+        print(f"Syntax error: first argument must be a machine. Got '{args[0]}'")
+        return
+    # Build targets: { machine: [action1, action2] }
+    targets = {}
+    current_machine = None
 
-        for token in args:
-            if token in actions:
-                # Found a new machine
-                current_machine = token
-                targets[current_machine] = []
-            elif token == "-a" and current_machine:
-                # Run all actions of current machine
-                targets[current_machine] = list(actions[current_machine].keys())
-            elif current_machine:
-                # Action name for current machine
-                targets[current_machine].append(token)
-            else:
-                print(f"Ignoring '{token}': action not found in machine {machine}.")
+    i = 0
+    n = len(args)
 
-    # Handle default actions for machines without specified actions
-    for machine, acts in list(targets.items()):
-        if not acts:
-            machine_actions = actions[machine]
-            action_names = list(machine_actions.keys())
+    while i < n:
+        token = args[i]
 
-            # If only one action, execute it
-            if len(action_names) == 1:
-                targets[machine] = action_names
-            else:
-                # Multiple named actions
-                print(f"Multiple possible actions found for machine '{machine}': {', '.join(action_names)}. Specify one or use -a to execute all.")
-                targets[machine] = []
+         # Machine selection
+        if token in lab_devices:
+            # Before switching machine, ensure the previous one had actions
+            if current_machine is not None and not targets[current_machine]:
+                print(f"Syntax error for machine '{current_machine}': no actions defined.")
+                return
 
-    # Execute actions per machine
+            current_machine = token
+            targets.setdefault(current_machine, [])
+
+            i += 1
+
+            # If the machine is the last token -> syntax error (missing action)
+            if i >= n:
+                print(f"Syntax error for machine '{current_machine}': no actions defined.")
+                return
+
+            continue
+
+        # '-a' means: run all actions for this machine
+        if token == "-a":
+            if current_machine is None:
+                print("Syntax error: '-a' must follow a machine.")
+                return
+
+            targets[current_machine] = list(actions.keys())
+            i += 1
+            continue
+
+        # Token = action name
+        if current_machine is None:
+            print(f"Syntax error: action '{token}' without a machine.")
+            return
+
+        if token not in actions:
+            print(f"\nAction '{token}' not found. Skipping.")
+        else:
+            targets[current_machine].append(token)
+
+        i += 1
+
+    # Final validation: last machine must have at least one action
+    if current_machine is not None and not targets[current_machine]:
+        print(f"Syntax error: machine '{current_machine}' has no valid actions.")
+        return
+
     for machine, action_list in targets.items():
-        if not action_list:
-            continue  # skip machines with no actions to run
 
-        machine_actions = actions[machine]
-        action_result = True
         for action_name in action_list:
-            if action_name not in machine_actions:
-                print(f"Action '{action_name}' not found for machine '{machine}'. Skipping.")
-                continue
+            result, total_time, commands_log = run_action(machine, action_name)
 
-            commands_log = {}  # Will collect all executed commands for this action
-            commands = machine_actions[action_name]
-            print(f"\n=== Actions to do on {machine} [{action_name}] ===\n")
-            start = time.time()
-            for i, command in enumerate(commands, 1):
-                if isinstance(command, tuple) and isinstance(command[0], str) and command[0].upper() in ("AND", "OR"):
-                    parent_label = i
-                    commands_log[parent_label] = {}
-                    # Compound action
-                    operator = command[0].upper()
-                    sub_actions = command[1:]
-                    print(f"Running command group {i}/{len(commands)} ({operator}): {len(sub_actions)} sub-commands\n")
-                    success = (operator == "AND")
-
-                    for sub_label, sub_step in enumerate(sub_actions, 1):
-                        cmd, expected = sub_step
-                        label = f"{i}{chr(96 + sub_label)}"
-                        try:
-                            print(f"Executing sub-command {label}: {cmd} (expected: {expected})\n")
-                            stdout, stderr, code = exec_command(machine, cmd)
-                            output = stdout.decode().strip() if stdout else ""
-
-                            # Append to commands_log
-                            commands_log[parent_label][label] = {
-                                "command": cmd,
-                                "expected": expected,
-                                "output": output,
-                                "return_code": code
-                            }
-
-                            if code == 0:
-                                print(output)
-                                if expected is not None and expected not in output and operator == "AND":
-                                    success = False
-                                    break
-                                if operator == "OR" and expected in output:
-                                    success = True
-                                    break
-                            else:
-                                print(f"Error in machine {machine} for sub-command {label}, see logs for more")
-                                if operator == "AND":
-                                    success = False
-                                    break
-
-                        except Exception as e:
-                            print(f"Fatal error in machine {machine} for sub-command {label}: {e}")
-
-                    if not success:
-                        print(f"Command group {i} ({operator}) failed on {machine}\n")
-                        action_result = False
-                        break
-                    else:
-                        print(f"Command group {i} ({operator}) completed successfully on {machine}\n")
-
-                else:
-                    # Simple command
-                    cmd, expected = command
-                    label = i
-                    try:
-                        print(f"Running command {i}/{len(commands)}: {cmd} (expected: {expected})\n")
-                        stdout, stderr, code = exec_command(machine, cmd)
-                        output = stdout.decode().strip() if stdout else stderr.decode().strip()
-
-                        # Append to commands_log
-                        commands_log[label]= {
-                            "command": cmd,
-                            "expected": expected,
-                            "output": output,
-                            "return_code": code
-                        }
-
-                        if code != 0:
-                            print(f"Error in machine {machine} for command {i}: {stderr}\n")
-                            action_result = False
-                            break
-                        if expected is not None and expected not in output:
-                            print(f"Expected output not found for command {i}: {expected}\n")
-                            action_result = False
-                            break
-                        #print(output)
-
-                    except Exception as e:
-                        print(f"Fatal error in machine {machine} for command {i}: {e}\n")
-            if action_result:
-               result = "Success"
-            else:
-                result = "Fail" 
-            end = time.time()
-            action_time = end - start
-            #print(commands_log)
-            # Save the action log
-            logs.save_action_log_yaml(
-                lab_path=lab_folder,
+            logger.save_action_log_yaml(
                 machine=machine,
-                action_result = result,
-                total_time= round(action_time,2),
+                action_result=result,
+                total_time=round(total_time, 2),
                 action_name=action_name,
                 commands=commands_log
             )
+
+            print(f"ACTION {action_name} on {machine}: {result}, see logs for more infos\n")
+
+
+def run_action(machine, action_name):
+        """
+        Executes an action and returns:
+           (result, time, commands_log)
+        where result ∈ {"Success", "Fail"}
+        """
+        commands = actions[action_name]
+        commands_log = {}
+        action_result = True
+        action_time = 0
+
+        print(f"\nExecuting action '{action_name}' on {machine}\n")
+
+        for idx, command in enumerate(commands, 1):
+
+            # ---------------------------------------------
+            # CASE: compound command (AND / OR)
+            # ---------------------------------------------
+            if isinstance(command, tuple) and command[0].upper() in ("AND", "OR"):
+                operator = command[0].upper()
+                sub_commands = command[1:]
+                success = operator == "AND"
+                parent_label = idx
+
+                commands_log[parent_label] = {
+                    "operator": operator,
+                    "group_time": 0,
+                    "group_result": "Success"
+                }
+
+                for sub_idx, (sub_cmd, expected) in enumerate(sub_commands, 1):
+                    label = f"{idx}{chr(96 + sub_idx)}"
+
+                    start = time.time()
+                    try:
+                        stdout, stderr, code = exec_command(machine, sub_cmd)
+                    except Exception as e:
+                        stdout, stderr, code = None, str(e), 1
+                    elapsed = round(time.time() - start, 2)
+                    action_time = round(action_time + elapsed, 2) 
+                    commands_log[parent_label]["group_time"] = round(commands_log[parent_label]["group_time"] + elapsed, 2)
+
+                    if stdout:
+                        output = stdout.decode().strip()
+                    elif stderr:
+                        output = stderr.strip()
+                    else:
+                        output = ""
+                    
+                    commands_log[parent_label][label] = {
+                        "command": sub_cmd,
+                        "expected": expected,
+                        "output": output,
+                        "command_time": elapsed,
+                        "result": "Success"
+                    }
+
+                    # evaluation
+                    if code != 0 or (expected and operator=="AND" and expected not in output):
+                        success = False
+                        commands_log[parent_label][label]["result"] = "Fail"
+                        break
+                    if operator=="OR" and expected and expected in output:
+                        success = True
+                        break
+
+                if not success:
+                    commands_log[parent_label]["group_result"] = "Fail"
+                    return ("Fail", action_time, commands_log)
+
+                continue
+
+            # ---------------------------------------------
+            # CASE: CALL — run a sub-action
+            # ---------------------------------------------
+            if command[0] == "call":
+                _, called_action, expected = command
+
+                print(f"Calling action '{called_action}' inside '{action_name}\n'")
+
+                sub_result, sub_time, sub_log = run_action(machine, called_action)
+                action_time += sub_time
+
+                commands_log[idx] = {
+                    "call": called_action,
+                    "expected": expected,
+                    "result": "Success" if sub_result == expected else "Fail",
+                    "action_time": sub_time,
+                    "commands": sub_log, 
+                }
+
+                if sub_result != expected:
+                    return ("Fail", action_time, commands_log)
+
+                continue
+
+            # ---------------------------------------------
+            # CASE: simple command
+            # ---------------------------------------------
+            cmd_str, expected = command
+            start = time.time()
+            try:
+                stdout, stderr, code = exec_command(machine, cmd_str)
+            except Exception as e:
+                stdout, stderr, code = None, str(e), 1
+
+            elapsed = round(time.time() - start, 2)
+            action_time += round(elapsed, 2)
+
+            if stdout:
+                output = stdout.decode().strip()
+            elif stderr:
+                output = stderr.strip()
+            else:
+                output = ""
+
+            commands_log[idx] = {
+                "command": cmd_str,
+                "expected": expected,
+                "output": output,
+                "command_time": elapsed,
+                "result": "Success"
+            }
+
+            if code != 0 or (expected and expected not in output):
+                commands_log[idx]["result"] = "Fail"
+                return ("Fail", action_time, commands_log)
+
+        return ("Success", action_time, commands_log)
+
+def cmd_plan():
+    pass
 
 
 cmd_commands = {
@@ -778,7 +856,8 @@ cmd_commands = {
     "deploy": cmd_deploy,
     "undeploy": cmd_undeploy,
     "restart": cmd_restart,
-    "action": cmd_action
+    "action": cmd_action,
+    "plan" : cmd_plan
 }
 
 # ----------------------------------------------
@@ -797,12 +876,18 @@ if __name__ == "__main__":
 
         lab_folder = os.path.join(script_dir, lab_name_arg)
         #print(lab_folder)
-
+        logger = ActionLogger(lab_folder)
+        #logger = ActionLogger()
         # Load lab configuration
         lab_info, devices = load_lab(os.path.join(lab_folder, "lab_conf.yaml"))
         lab_name = lab_info.get("description")
-        if os.path.isfile(os.path.join(lab_folder,"actions.yaml")): 
-            actions = parse_actions(os.path.join(lab_folder,"actions.yaml"))
+        if os.path.isfile(os.path.join(lab_folder,"actions.yaml")):
+            try: 
+                actions = parse_actions(os.path.join(lab_folder,"actions.yaml"))
+                actions = { str(k): v for k, v in actions.items() }
+            except Exception as e:
+                print(e)
+                exit()
         # Generate dynamic expected_routes
         expected_routes = generate_expected_routes(devices, lab_folder)
         #print("Dynamic expected_routes:", expected_routes) # for debug
@@ -840,6 +925,10 @@ if __name__ == "__main__":
             # Ensure the image is available
             Kathara.get_instance().check_image(dev['image'])
             device = lab_devices[name]
+
+            #Create 
+            #machines_names = []
+            #machines_names.append(name)
 
             # Copy device-specific assets if available
             if dev["assets"] == None:
@@ -970,4 +1059,4 @@ if __name__ == "__main__":
             print("You need root permissions to run this script (or add your user to the 'docker' group).")
             sys.exit(1)
         else:
-            raise    
+            raise
