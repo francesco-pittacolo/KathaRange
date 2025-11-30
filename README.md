@@ -1,7 +1,7 @@
 # CyForge
 
 ## What is it?
-**CyForge** is a cybersecurity network-emulation environment built on the Kathará Framework API. It allows you to create dynamic,
+**CyForge** is a cybersecurity network-emulation system based on the Kathará Framework API (https://github.com/KatharaFramework/Kathara). It allows you to create dynamic,
 containerized networks for cyber attack and defense scenarios, integrating leading open-source technologies such as:
 
 -   **Snort 3** (IDS)
