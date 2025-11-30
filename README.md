@@ -1,7 +1,15 @@
-# KathaRange
+# CyForge
 
 ## What is it?
-**KathaRange** is a cybersecurity network emulation system built on the [Kathará Framework API](https://github.com/KatharaFramework). It can create a dynamic, containerized network of machines for cyber attack and defense scenarios, featuring leading open-source technologies such as Snort3 IDS, Wazuh SIEM, MITRE's Caldera, and a Kali Linux machine equipped with Atomic Red Team tools.
+**CyForge** is a cybersecurity network-emulation environment built on the Kathará Framework API. It allows you to create dynamic,
+containerized networks for cyber attack and defense scenarios, integrating leading open-source technologies such as:
+
+-   **Snort 3** (IDS)
+-   **Wazuh** (SIEM)
+-   **MITRE Caldera** (adversary emulation)
+-   **Kali Linux** with **Atomic Red Team** tools
+
+The project originated from g4br-i's repository **KathaRange** (https://github.com/g4br-i/KathaRange).
 
 ## Requirements:
 - Linux host machine
