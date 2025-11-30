@@ -9,6 +9,9 @@ It allows you to create dynamic, containerized networks for cyber attack and def
 -   **MITRE Caldera** (adversary emulation)
 -   **Kali Linux** with **Atomic Red Team** tools
 
+It also offers the possibility to create custom actions and plans to
+automate experiments.
+
 The project originated from g4br-i's repository **KathaRange** (https://github.com/g4br-i/KathaRange).
 
 ## Requirements:
