@@ -84,11 +84,11 @@ RUN mkdir -p /var/lib/wazuh-indexer && chown 1000:1000 /var/lib/wazuh-indexer &&
     chmod 600 /usr/share/wazuh-indexer/opensearch.yml
 
 
-RUN mkdir /certs
-COPY certs/ /certs/
+#RUN mkdir -p /certs
+#COPY certs/ /certs/
 
-RUN mkdir /wazuh_indexer
-COPY wazuh_indexer/ /wazuh_indexer/
+RUN mkdir -p /wazuh_indexer
+#COPY wazuh_indexer/ /wazuh_indexer/
 
 # Add user to sudoers group and configure passwordless sudo
 RUN echo "$USER ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers

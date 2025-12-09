@@ -101,11 +101,11 @@ COPY --from=builder --chown=1000:1000 $INSTALL_DIR $INSTALL_DIR
 RUN mkdir -p /usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom
 RUN chown 1000:1000 /usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom
 
-RUN mkdir /wazuh_dashboard
-COPY wazuh_dashboard/ /wazuh_dashboard/
+RUN mkdir -p /wazuh_dashboard
+#COPY wazuh_dashboard/ /wazuh_dashboard/
 
-RUN mkdir /certs
-COPY certs/ /certs/
+#RUN mkdir /certs
+#COPY certs/ /certs/
 
 # Set workdir and user
 WORKDIR $INSTALL_DIR
