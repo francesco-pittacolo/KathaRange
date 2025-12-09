@@ -1,0 +1,11 @@
+action_name: testr2
+timestamp: '20251130_110053'
+total_time: 0.16
+final_result: Success
+commands:
+  1:
+    command: echo "test r2"
+    expected: null
+    output: test r2
+    command_time: 0.16
+    result: Success
