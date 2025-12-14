@@ -23,8 +23,8 @@ def cmd_action(args, cmd_manager):
     Examples:
       action kali test          -> runs 'test' on kali
       action kali -a            -> runs all actions on kali
-      action kali test r1 -a    -> runs 'test' and all commands of r1
-      action kali -a r2 testr2  -> runs all actions of kali and 'testr2' on r2
+      action kali test r1 -a    -> runs 'test' on kali and all actions on r1
+      action kali -a r2 testr2  -> runs all actions on kali and 'testr2' on r2
     """
     if not args:
         print("You must specify at least one machine name.")
@@ -101,7 +101,7 @@ def cmd_action(args, cmd_manager):
                 commands=commands_log
             )
 
-            print(f"ACTION {action_name} on {machine}: {result}, see logs for more infos\n")
+            print(f"\nACTION {action_name} on {machine}: {result}, see logs for more infos\n")
 
 
 def run_action(cmd_manager, machine, action_name):
@@ -196,8 +196,9 @@ def run_action(cmd_manager, machine, action_name):
                 }
 
                 if sub_result != expected:
+                    print(f"\nAction {called_action} failed\n")
                     return ("Fail", action_time, commands_log)
-
+                print(f"\nAction {called_action} completed successfully. Returning to {action_name}\n")
                 continue
 
             # ---------------------------------------------
