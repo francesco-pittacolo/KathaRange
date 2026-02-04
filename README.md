@@ -17,6 +17,7 @@ The project originated from g4br-i's repository **KathaRange** (https://github.c
 - Linux host machine
 - Docker
 - Python
+- Kathara Python API (installation instructions in Getting Started section)
 
 ## Getting Started
 Launch the script in the root of the project:
