@@ -16,7 +16,7 @@ The project originated from g4br-i's repository **KathaRange** (https://github.c
 ## Requirements:
 - Linux host machine
 - Docker
-- Python
+- Python 3
 - Kathara Python API (installation instructions in Getting Started section)
 
 ## Getting Started
