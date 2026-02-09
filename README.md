@@ -32,14 +32,21 @@ python3 -m pip install "kathara"
 ```
 Then you can start a lab with:
 
-```
+```bash
 python3 start_lab.py
 ```
+**Note:** make sure you are in the `docker` group or use `sudo` if necessary:
+
+```bash
+sudo python3 start_lab.py
+```
+
 You can also view all available options by running:
 
 ```
 python3 start_lab.py --help
 ```
+Then enter lab name or path (for demo use lab).
 
 ⚠️ Wait for all terminals to completely load the startup scripts, then you will able to access all services.
 
