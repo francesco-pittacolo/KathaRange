@@ -52,7 +52,6 @@ Then enter lab name or path (for demo use lab).
 
 Caldera will be listening on:
 http://localhost:8888/
-
 depending on which team you want to play:
 
 usr/psw
