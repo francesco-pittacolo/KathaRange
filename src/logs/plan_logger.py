@@ -4,7 +4,7 @@ from datetime import datetime
 
 LOG_DIR = "logs"
 
-class ActionLogger:
+class PlanLogger:
     def __init__(self, lab_path: str):
         """
         Initialize the logger with the root path for logs.
@@ -33,43 +33,42 @@ class ActionLogger:
             pass
 
     # ---------------------- PUBLIC METHODS ----------------------
-    def save_action_log_yaml(self, machine: str, action_result: str, action_name: str,
-                             total_time: str, commands: dict):
+    def save_plan_log_yaml(self, plan_name: str, plan_result: str,
+                           total_time: str, steps: dict):
         """
-        Save all executed commands of a single action into one YAML log file.
-
-        Parameters:
-        - machine: machine name
-        - action_name: name of the action
-        - commands: dict mapping label -> {command, expected, output, return_code}
+        Save all executed steps of a single plan into one YAML log file.
 
         Automatically creates directories:
-            <lab_path>/logs/<machine>/actions/<action_name>/
-        
-        Ownership is set to the original user if the lab is run with sudo, but only for newly created
-        folders/files.
+            <lab_path>/logs/plans/<plan_name>/
+
+        Parameters:
+        - plan_name: name of the plan
+        - plan_result: final result (Success / Fail)
+        - total_time: total execution time
+        - steps: dict with 'need' and 'actions' logs
         """
+
         try:
             # Ensure general logs folder
             logs_dir = os.path.join(self.lab_path, LOG_DIR)
             self._ensure_dir(logs_dir)
 
-            # Ensure machine/action folder
-            machine_dir = os.path.join(logs_dir, "actions", machine, action_name)
-            self._ensure_dir(machine_dir)
+            # Ensure plan folder
+            plan_dir = os.path.join(logs_dir, "plans", plan_name)
+            self._ensure_dir(plan_dir)
 
             # Prepare file path
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"{action_name}_{timestamp}.yaml"
-            filepath = os.path.join(machine_dir, filename)
+            filename = f"{plan_name}_{timestamp}.yaml"
+            filepath = os.path.join(plan_dir, filename)
 
             # Wrap data for YAML
             data = {
-                "action_name": action_name,
+                "plan_name": plan_name,
                 "timestamp": timestamp,
                 "total_time": total_time,
-                "final_result": action_result,
-                "commands": commands
+                "final_result": plan_result,
+                "steps": steps
             }
 
             # Write YAML file
@@ -87,7 +86,6 @@ class ActionLogger:
 
         except Exception as e:
             import traceback
-            print(f"[ERROR] Failed to save log for {machine}/{action_name}: {e}")
+            print(f"[ERROR] Failed to save log for plan {plan_name}: {e}")
             traceback.print_exc()
             return None
-

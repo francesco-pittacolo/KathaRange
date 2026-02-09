@@ -1,6 +1,6 @@
 from src.command_system.utils import handle_errors
 from Kathara.manager.Kathara import Kathara
-from src.utils.spawn_terminal import spawn_terminal
+from src.lab_manager.utils.spawn_terminal import spawn_terminal
 
 @handle_errors
 def cmd_deploy(args, cmd_manager):

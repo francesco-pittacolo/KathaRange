@@ -1,13 +1,15 @@
 from Kathara.manager.Kathara import Kathara
-from src.logs.action_logger import ActionLogger 
+from src.logs.action_logger import ActionLogger
+from src.logs.plan_logger import PlanLogger
 from Kathara.model.Lab import Lab
-from src.lab_manager.lab_manager import LabManager
+from src.lab_manager.LabManager import LabManager
 from src.ospf.ospf_manager import OSPFManager
-from src.utils.arg_parser import parse_args
-from src.utils.process_monitor import monitor_processes
-from src.utils.action_parser import parse_actions
+from src.lab_manager.utils.arg_parser import parse_args
+from src.lab_manager.utils.process_monitor import monitor_processes
+from src.command_system.action_parser import parse_actions
+from src.command_system.plan_parser import parse_plans
 from src.command_system.cmd_manager import CommandManager
-from src.utils.spawn_terminal import spawn_terminal
+from src.lab_manager.utils.spawn_terminal import spawn_terminal
 import threading
 import sys
 import os
@@ -27,7 +29,8 @@ if __name__ == "__main__":
 
         lab_folder = os.path.join(script_dir, lab_name_arg)
 
-        logger = ActionLogger(lab_folder)
+        action_logger = ActionLogger(lab_folder)
+        plan_logger = PlanLogger(lab_folder)
         lab_manager = LabManager(script_dir, lab_folder, lab_name=None)
         
         # Load lab configuration
@@ -41,7 +44,13 @@ if __name__ == "__main__":
             except Exception as e:
                 print(e)
                 exit()
-        
+        if os.path.isfile(os.path.join(lab_folder,"plans.yaml")):
+            try: 
+                plans = parse_plans(os.path.join(lab_folder,"plans.yaml"))
+                plans = { str(k): v for k, v in plans.items() }
+            except Exception as e:
+                print(e)
+                exit()
         #print("Dynamic expected_routes:", expected_routes) # for debug
 
         Kathara.get_instance().undeploy_lab(lab_name=lab_name)
@@ -171,8 +180,10 @@ if __name__ == "__main__":
             lab_name = lab_name,
             devices=devices,
             actions=actions,
+            plans = plans,
             processes=processes,
-            logger=logger,
+            action_logger=action_logger,
+            plan_logger=plan_logger,
             spawn_terminals=spawn_terminals
         )
 
