@@ -17,7 +17,7 @@ The project originated from g4br-i's repository **KathaRange** (https://github.c
 - Linux host machine
 - Docker
 - Python 3
-- Kathara Python API (installation instructions in Getting Started section)
+- Katharà Python API (installation instructions in Getting Started section)
 
 ## Getting Started
 Launch the script in the root of the project:
@@ -25,7 +25,7 @@ Launch the script in the root of the project:
     ./build_images.sh
 The script will automatically clone all dependencies and build all images needed by the demo lab. You can go grab a coffee, it will take some time to complete :coffee:
 
-Once the process is completed, run the following commands to install Kathara python API:
+Once the process is completed, run the following commands to install Katharà Python API:
 ```
 python3 -m pip install git+https://github.com/saghul/pyuv@master#egg=pyuv
 python3 -m pip install "kathara"
