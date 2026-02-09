@@ -44,7 +44,7 @@ def substitute_params(text: str, override_params: dict, warn_missing=True):
     return re.sub(pattern, replacer, text)
 
 
-#@handle_errors
+@handle_errors
 def cmd_action(args, cmd_manager):
     """
     Execute actions defined in actions.yaml for the selected machines.

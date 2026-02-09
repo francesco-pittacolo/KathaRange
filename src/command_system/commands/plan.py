@@ -2,7 +2,7 @@ import time
 from src.command_system.utils import handle_errors
 from src.command_system.commands.action import exec_command, run_action
 
-#@handle_errors
+@handle_errors
 def cmd_plan(args, cmd_manager):
     """
     Execute plans defined in the file plans.yaml.
