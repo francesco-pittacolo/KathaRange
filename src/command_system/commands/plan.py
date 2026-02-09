@@ -55,7 +55,7 @@ def cmd_plan(args, cmd_manager):
             steps=plan_log
         )
 
-        print(f"\nPLAN {plan_name}: {result}, see logs for more infos\n")
+        print(f"\nPLAN {plan_name}: {result}, see logs for more info\n")
 
 
 # -------------------------

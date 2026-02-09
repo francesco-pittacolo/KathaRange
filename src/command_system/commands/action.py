@@ -139,7 +139,7 @@ def cmd_action(args, cmd_manager):
                 commands=commands_log
             )
 
-            print(f"\nACTION {action_name} on {machine}: {result}, see logs for more infos\n")
+            print(f"\nACTION {action_name} on {machine}: {result}, see logs for more info\n")
 
 
 def run_action(cmd_manager, machine, action_name, cli_params=None):
