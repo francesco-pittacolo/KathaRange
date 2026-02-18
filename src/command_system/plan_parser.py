@@ -57,5 +57,3 @@ def parse_plans(filename: str):
                 )
     return parsed_plans
 
-
-parse_plans("/home/francesco/Desktop/CyForge-Test/KathaRange/labs/lab3/plans.yaml")
