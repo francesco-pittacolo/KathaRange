@@ -5,7 +5,7 @@ import os
 
 def spawn_terminal(machine_name, lab_name):
     """
-    Open an xterm window and attach to the router's TTY for interactive use.
+    Open an xterm window and attach it to the device TTY for interactive use.
     """
     python_path = sys.executable
     try:
