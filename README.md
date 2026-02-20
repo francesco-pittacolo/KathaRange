@@ -70,3 +70,7 @@ usr/psw
 
     admin/SecretPassword
 
+
+## Documentation
+
+Full documentation is available [here](https://github.com/francesco-pittacolo/KathaRange/tree/main/docs)
