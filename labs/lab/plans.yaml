@@ -7,7 +7,7 @@ plans:
             command: echo 'test'
             expected: test
             machine: kali
-          1: 
+          2: 
             action: testping
             machine: kali
             parameters:
