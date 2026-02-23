@@ -10,7 +10,6 @@ Plans provide a way to orchestrate multiple steps, specify prerequisites, timeou
 Each plan is defined under a unique name and can contain:
 
 * `plan_timeout` – Optional overall timeout for the plan (seconds)
-* `parameters` – Optional parameters that override inherited or default values for the called action.
 * `need` – Prerequisites to satisfy before running actions
 * `actions` – Actions to execute as part of the plan
 
