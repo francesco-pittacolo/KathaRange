@@ -166,6 +166,14 @@ actions:
     4:
       command: echo 'OK'
       expected: OK
+
+  testping:
+    1:
+      command: ping -c 3 <$IP:192.168.2.10>
+      expected: 3 received
+    2: 
+      command: echo 'test'
+      expected: test
 ```
 
 ### Explanation
