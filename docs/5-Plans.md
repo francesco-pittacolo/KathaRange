@@ -10,7 +10,7 @@ Plans provide a way to orchestrate multiple steps, specify prerequisites, timeou
 Each plan is defined under a unique name and can contain:
 
 * `plan_timeout` – Optional overall timeout for the plan (seconds)
-* `parameters` – Optional default parameters for the plan
+* `parameters` – Optional parameters that override inherited or default values for the called action.
 * `need` – Prerequisites to satisfy before running actions
 * `actions` – Actions to execute as part of the plan
 
@@ -22,11 +22,11 @@ plans:
     plan_timeout: 120
     need:
       1:
-        action: testr2
+        command: echo 'test'
+        expected: test
         machine: kali
       2:
-        command: echo 'ciao'
-        expected: ciao
+        action: testping
         machine: kali
     actions:
       1:
@@ -73,10 +73,10 @@ need:
 
 ## `actions`
 
-* Sequence of actions to execute after prerequisites.
-* Each step must define the **machine** and either an **action** (from `actions.yaml`) or a **command**.
-* Optional **timeout** per step (seconds).
-* Optional **parameters** to override defaults.
+* Sequence of actions to execute after prerequisites are satisfied 
+* Each step must define the **machine** and either an **action** (from `actions.yaml`) or a **command**
+* Optional **timeout** per step (seconds)
+* Optional **parameters** to override defaults
 
 Example:
 
@@ -102,21 +102,21 @@ actions:
 
 * **Action vs. Command**:
 
-  * `action` refers to an action defined in `actions.yaml`.
-  * `command` is a direct shell command to run on the machine.
+  * `action` refers to an action defined in `actions.yaml`
+  * `command` is a direct shell command to run on the machine
 
 * **Expected Output**:
 
-  * Each step can define `expected` (default is `"Success"`) to verify execution.
+  * Each step can define `expected` (default is `"Success"`) to verify execution
 
 * **Parameters**:
 
-  * Step-level parameters override plan-level defaults.
-  * Useful for dynamic execution with variables like `$IP`.
+  * Step-level parameters override plan-level defaults
+  * Useful for dynamic execution with variables like `$IP`
 
 * **Timeouts**:
 
-  * Step-level `timeout` overrides the global plan timeout for that action.
+  * Step-level `timeout` overrides the global plan timeout for that action
 
 ---
 

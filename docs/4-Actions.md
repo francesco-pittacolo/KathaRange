@@ -116,7 +116,7 @@ Example:
 
 ```yaml
 1:
-  command: "ping -c 3 <$IP:192.168.3.10>"
+  command: "ping -c 3 <$IP:192.168.2.10>"
   expected: "3 received"
 ```
 
@@ -167,6 +167,16 @@ actions:
       command: echo 'OK'
       expected: OK
 ```
+
+### Explanation
+
+**1**: Calls another action named `testping`. Its expected result is `"Success"` by default unless overridden.  
+**2**: Executes a compound AND operation:
+  * **2a**: Runs an `nmap` scan to detect Apache on `192.168.2.10`.
+  * **2b**: Runs a simple `echo` command and verifies output.
+
+**3**: Executes a `curl` command to trigger a path traversal, effectively executing `ls`.  
+**4**: Runs a simple `echo 'OK'` command to confirm the final step.
 
 ---
 
