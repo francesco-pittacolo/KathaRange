@@ -59,12 +59,14 @@ Example:
 ```yaml
 need:
   1:
-    action: testr2
+    command: echo 'test'
+    expected: test
     machine: kali
-  2:
-    command: echo 'ciao'
-    expected: ciao
+  2: 
+    action: testping
     machine: kali
+    parameters:
+      $IP: 192.168.2.10 
 ```
 
 ---

