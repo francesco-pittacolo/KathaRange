@@ -178,6 +178,9 @@ actions:
 **3**: Executes a `curl` command to trigger a path traversal, effectively executing `ls`.  
 **4**: Runs a simple `echo 'OK'` command to confirm the final step.
 
+#### Note
+If you execute this action in the demo lab, it will stop at step 3 because Snort will detect the path traversal and block the attack.
+
 ---
 
 ## Execution
