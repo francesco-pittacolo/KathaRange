@@ -68,12 +68,12 @@ Format:
 You can combine multiple sub-steps using logical operators.
 
 ```yaml
-1:
+2:
   operator: AND
-  1a:
+  2a:
     command: nmap -sV 192.168.2.10 | fgrep 'Apache' | awk '/open/'
     expected: Apache
-  1b: ["echo 'test kali'", "test kali"]
+  2b: ["echo 'test kali'", "test kali"]
 ```
 
 Supported operators:
@@ -91,14 +91,14 @@ An action can call another action as a numbered step:
 
 ```yaml
 2:
-  call: testr2
+  call: testping
 ```
 
 Optional expected result (defaults to `Success):
 
 ```yaml
 2:
-  call: testr2
+  call: testping
   expected: Fail
 ```
 
@@ -116,8 +116,8 @@ Example:
 
 ```yaml
 1:
-  command: "ping -c 1 <$IP:8.8.8.8>"
-  expected: "1 received"
+  command: "ping -c 3 <$IP:192.168.3.10>"
+  expected: "3 received"
 ```
 
 If no override is provided, the default value is used.
