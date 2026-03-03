@@ -87,7 +87,7 @@ To create or modify a lab:
 6. If not previously defined in a device configuration, copy necessary assets in right folder (e.g., new certificates for Wazuh)
 7. Define startup files (optional)
 8. Define actions and plans for automation (optional)
-9. Launch the lab and verify the configuration
+9. Launch the lab with start_lab.py and verify the configuration
 
 This approach enables **arbitrary lab topologies**, from small experiments to complex enterprise-like environments.
 
