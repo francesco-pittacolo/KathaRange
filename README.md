@@ -46,7 +46,7 @@ You can also view all available options by running:
 ```
 python3 start_lab.py --help
 ```
-Then enter lab name or path (for demo use lab).
+Then enter lab name or path (for demo use `lab`).
 
 ⚠️ Wait for all terminals to completely load the startup scripts, then you will able to access all services.
 
