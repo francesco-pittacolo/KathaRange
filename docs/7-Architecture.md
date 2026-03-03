@@ -233,7 +233,18 @@ The architecture is based on the following principles:
 
 ### YAML-Driven Configuration
 
-Execution behavior is defined declaratively through YAML files.
+Execution behavior and orchestration are defined declaratively through YAML files.
+This enables readable, version-controlled, and easily modifiable lab scenarios.
+
+### Flexible Lab Definition
+
+Any lab topology can be defined through configuration, including:
+- Arbitrary number of machines
+- Custom network segments
+- Dynamic interface mappings
+- Custom startup scripts and assets
+
+This makes the system adaptable to a wide range of scenarios, from simple testing environments to complex multi-network infrastructures.
 
 ### Separation of Concerns
 
@@ -241,19 +252,20 @@ Infrastructure, execution logic, logging, and user interaction are isolated in d
 
 ### Deterministic Execution
 
-Expected outputs are explicitly defined and validated.
+Expected outputs are explicitly defined and validated, ensuring predictable and controlled behavior during execution.
+
+### Parameterized Execution
+Actions and plans support parameter injection, allowing reusable definitions that can adapt dynamically to different environments or scenarios.
 
 ### Reproducibility
 
-Each execution of actions and plans is fully traceable via timestamped logs.
+Each execution of actions and plans is fully traceable via structured, timestamped YAML logs, enabling debugging and auditing.
 
 ### Automatic Environment Preparation
 
 Required directories and runtime structures are automatically created.
 
----
-
-## Extensibility
+### Extensibility
 
 The architecture allows future extensions such as:
 
@@ -263,5 +275,4 @@ The architecture allows future extensions such as:
 
 Because components are modular, new features can be added without impacting unrelated layers.
 
----
 
