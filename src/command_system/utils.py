@@ -63,25 +63,3 @@ def setup_history_and_completion(cmd_manager):
     # Set tab completion using the provided completer
     readline.set_completer(lambda text, state: completer(cmd_manager, text, state))
     readline.parse_and_bind("tab: complete")
-
-'''
-def setup_history_and_completition(lab_name: str, cmd_manager):
-    safe_lab_name = sanitize_filename(lab_name)
-    home_dir = os.path.expanduser("~")
-    history_file = os.path.join(home_dir, f"kathara_{safe_lab_name}_history")
-
-    # Load previous history
-    try:
-        readline.read_history_file(history_file)
-    except FileNotFoundError:
-        pass
-
-    # Save history at exit
-    atexit.register(readline.write_history_file, history_file)
-
-    # Set tab completion
-    readline.set_completer(lambda text, state: completer(cmd_manager, text, state))
-    readline.parse_and_bind("tab: complete")
-
-    return history_file
-'''
