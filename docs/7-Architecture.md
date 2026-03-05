@@ -47,25 +47,25 @@ This layer abstracts Docker/Kathara details from the execution engine.
 
 ### Execution Layer
 
-Responsible for interpreting YAML definitions and orchestrating execution.
+The Execution Layer serves as the system's orchestration engine. It is responsible for interpreting YAML definitions, orchestrating execution, managing user-invoked commands, and connecting actions and plans to the logging system.
 
 #### Responsibilities
 
-* Parse `actions.yaml`
-* Parse `plans.yaml`
-* Inject parameters
-* Execute commands inside machines
-* Evaluate expected results
-* Handle logical operators (AND / OR)
-* Aggregate execution results
+* Parse `actions.yaml` (`action_parser`)
+* Parse `plans.yaml` (`plan_parser`)
+* Inject parameters from plan sections and CLI variables into action definitions (handled by `action` and `plan` commands)
+* Execute commands on target machines, delegating each command to perform its specific task and return a result (`action` and `plan` commands)
+* Evaluate expected results (`action` and `plan` commands)
+* Handle logical operators (AND / OR) in compound commands (`action` command)
+* Aggregate execution results and log metadata (`CommandManager`)
+* Manage user-invoked utility commands such as `status`, `deploy`, and `help` (`CommandManager`)
 
-#### Main Component
+#### Main Components
 
-* `CommandManager`
-* `action_parser`
-* `plan_parser`
-
-This layer acts as the orchestration engine of the system.
+* `CommandManager` – central hub that receives user commands and delegates execution
+* `action_parser` – parses action definitions from `actions.yaml`
+* `plan_parser` – parses plan definitions from `plans.yaml`
+* Available commands – implement execution logic for actions, plans, and utility operations
 
 ---
 
@@ -93,24 +93,22 @@ Logs are deterministic, structured, and machine-readable.
 
 ### Interface Layer
 
-Responsible for user interaction and runtime control.
+The Interface Layer is responsible for user interaction and runtime control. It provides the operational interface without embedding execution logic and serves as the entry point for user commands and runtime management.
 
 #### Responsibilities
 
-* Parse CLI arguments
-* Handle interactive command input
-* Spawn terminals for machines
-* Monitor running processes
-* Dispatch commands to execution engine
+* Parse CLI arguments (`parse_args`)
+* Handle interactive command input (`cli`)
+* Spawn terminals for machines (`spawn_terminal`)
+* Monitor running processes (`monitor_processes`)
+* Dispatch commands to the execution engine (`CommandManager`)
 
 #### Utilities
 
-* `parse_args`
-* `spawn_terminal`
-* `monitor_processes`
-
-This layer provides the operational interface without embedding execution logic.
-
+* `parse_args` – parses command-line arguments and configuration options
+* `cli` – manages interactive command input from the user
+* `spawn_terminal` – opens terminals for lab machines
+* `monitor_processes` – monitors and maintains running processes
 ---
 
 ## Startup Workflow
