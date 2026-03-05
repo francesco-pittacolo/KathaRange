@@ -128,9 +128,9 @@ commands:
         command_time: 2.1
         result: Success
       2:
-        command: echo 'test aaa'
-        expected: test aaa
-        output: test aaa
+        command: echo 'test'
+        expected: test
+        output: test
         command_time: 0.07
         result: Success
   2:
