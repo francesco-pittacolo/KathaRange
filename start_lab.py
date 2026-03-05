@@ -9,6 +9,7 @@ from src.lab_manager.utils.process_monitor import monitor_processes
 from src.command_system.action_parser import parse_actions
 from src.command_system.plan_parser import parse_plans
 from src.command_system.cmd_manager import CommandManager
+from src.command_system.cli import cli
 from src.lab_manager.utils.spawn_terminal import spawn_terminal
 import threading
 import sys
@@ -199,22 +200,7 @@ if __name__ == "__main__":
         else:
             print("\nLab deployed in background. Type 'exit' to stop.")
 
-        try:
-            while not stop_event.is_set():
-                line = input("> ").strip()
-                if not line:
-                    continue
-                parts = line.split()
-                cmd_name, args = parts[0].lower(), parts[1:]
-                cmd_func = cmd_manager.cmd_commands.get(cmd_name)
-                if cmd_func: 
-                    cmd_func(args=args, cmd_manager=cmd_manager)
-                else:
-                    print(f"Unknown command: {cmd_name}")
-
-        except KeyboardInterrupt:
-            print("\nLab interrupted by user.")
-            cmd_manager.cmd_commands.get("exit")(args=None, cmd_manager=cmd_manager)
+        cli(cmd_manager, stop_event)
 
 
     except Exception as e:
