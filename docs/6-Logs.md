@@ -109,18 +109,18 @@ commands:
     action_time: 2.17
     commands:
       1:
-        command: ping -c 3 192.168.3.10
+        command: ping -c 3 192.168.2.10
         expected: 3 received
-        output: 'PING 192.168.3.10 (192.168.3.10) 56(84) bytes of data.
+        output: 'PING 192.168.2.10 (192.168.2.10) 56(84) bytes of data.
 
-          64 bytes from 192.168.3.10: icmp_seq=1 ttl=61 time=3.63 ms
+          64 bytes from 192.168.2.10: icmp_seq=1 ttl=61 time=3.63 ms
 
-          64 bytes from 192.168.3.10: icmp_seq=2 ttl=61 time=2.97 ms
+          64 bytes from 192.168.2.10: icmp_seq=2 ttl=61 time=2.97 ms
 
-          64 bytes from 192.168.3.10: icmp_seq=3 ttl=61 time=2.62 ms
+          64 bytes from 192.168.2.10: icmp_seq=3 ttl=61 time=2.62 ms
 
 
-          --- 192.168.3.10 ping statistics ---
+          --- 192.168.2.10 ping statistics ---
 
           3 packets transmitted, 3 received, 0% packet loss, time 2003ms
 
@@ -231,18 +231,18 @@ steps:
         time: 2.19
         commands:
           1:
-            command: ping -c 3 192.168.3.10
+            command: ping -c 3 192.168.2.10
             expected: 3 received
-            output: 'PING 192.168.3.10 (192.168.3.10) 56(84) bytes of data.
+            output: 'PING 192.168.2.10 (192.168.2.10) 56(84) bytes of data.
 
-              64 bytes from 192.168.3.10: icmp_seq=1 ttl=61 time=5.90 ms
+              64 bytes from 192.168.2.10: icmp_seq=1 ttl=61 time=5.90 ms
 
-              64 bytes from 192.168.3.10: icmp_seq=2 ttl=61 time=2.57 ms
+              64 bytes from 192.168.2.10: icmp_seq=2 ttl=61 time=2.57 ms
 
-              64 bytes from 192.168.3.10: icmp_seq=3 ttl=61 time=1.95 ms
+              64 bytes from 192.168.2.10: icmp_seq=3 ttl=61 time=1.95 ms
 
 
-              --- 192.168.3.10 ping statistics ---
+              --- 192.168.2.10 ping statistics ---
 
               3 packets transmitted, 3 received, 0% packet loss, time 2003ms
 
